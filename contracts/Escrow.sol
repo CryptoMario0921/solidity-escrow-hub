@@ -4,31 +4,76 @@ pragma solidity ^0.8.28;
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
-contract Lock {
-  uint public unlockTime;
-  address payable public owner;
+contract Escrow {
+    error Unauthorized();
+    error InvalidStatus();
+    error NoFreelancer();
+    error NotSubmitted();
+    error AlreadyReleased();
+    error NothingToRelease();
+    error MathOverflow();
+    error MismatchedProject();
+    error BidNotExist();
+    error MilestoneExists();
+    error MilestoneNotFound();
+    error ZeroAmount();
+    error ProjectExists();
+    error ProjectNotFound();
 
-  event Withdrawal(uint amount, uint when);
-
-  constructor(uint _unlockTime) payable {
-    require(
-      block.timestamp < _unlockTime,
-      "Unlock time should be in the future"
+    event ProjectCreated(uint64 indexed projectId, address indexed client);
+    event BidPlaced(
+        uint64 indexed projectId,
+        address indexed bidder,
+        uint256 amountWei
     );
+    event BidAccepted(uint64 indexed projectId, address indexed bidder);
+    event MilestoneCreated(
+        uint64 indexed projectId,
+        uint16 indexed index,
+        uint256 amountWei
+    );
+    event MilestoneFunded(
+        uint64 indexed projectId,
+        uint16 indexed index,
+        uint256 fundedWei,
+        uint256 totalFundedWei
+    );
+    event MilestoneSubmitted(uint64 indexed projectId, uint16 indexed index);
+    event MilestoneReleased(
+        uint64 indexed projectId,
+        uint16 indexed index,
+        uint256 amountWei
+    );
+    event ProjectClosed(uint64 indexed projectId, uint256 refundedWei);
 
-    unlockTime = _unlockTime;
-    owner = payable(msg.sender);
-  }
+    enum ProjectStatus {
+        Open,
+        InProgress,
+        Closed
+    }
 
-  function withdraw() public {
-    // Uncomment this line, and the import of "hardhat/console.sol", to print a log in your terminal
-    // console.log("Unlock time is %o and block timestamp is %o", unlockTime, block.timestamp);
+    struct Project {
+        address client;
+        address freelancer;
+        ProjectStatus status;
+        uint256 vaultBalance;
+        bool exists;
+    }
 
-    require(block.timestamp >= unlockTime, "You can't withdraw yet");
-    require(msg.sender == owner, "You aren't the owner");
+    struct Bid {
+        uint256 amountWei;
+        bool exists;
+    }
 
-    emit Withdrawal(address(this).balance, block.timestamp);
+    struct Milestone {
+        uint256 amountWei;
+        uint256 fundedWei;
+        bool submitted;
+        bool released;
+        bool exists;
+    }
 
-    owner.transfer(address(this).balance);
-  }
+    mapping(uint64 => Project) public projects;
+    mapping(uint64 => mapping(address => Bid)) public bids;
+    mapping(uint64 => mapping(uint16 => Milestone)) public milestones;
 }
