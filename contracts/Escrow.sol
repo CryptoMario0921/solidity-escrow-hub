@@ -105,7 +105,7 @@ contract Escrow {
         if (project.status != ProjectStatus.Open) revert InvalidStatus();
         if (amountWei == 0) revert ZeroAmount();
       
-        Bid storage bid = bids[projectId][msg.sender]
+        Bid storage bid = bids[projectId][msg.sender];
         bid.amountWei = amountWei;
         bid.exists = true;
 
